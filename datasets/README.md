@@ -18,7 +18,7 @@ Please make a soft link to your dataset here:
 - for linux
 
   ```shell
-  ln -s <name> <target-path>
+  ln -s <target-path> <name>
   ```
 
   
