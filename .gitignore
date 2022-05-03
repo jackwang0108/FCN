@@ -2,6 +2,7 @@
 .idea/
 runs/
 log/
+__pycache__/
 
 datasets/*
 !datasets/README.md
