@@ -15,36 +15,35 @@ from colorama import Fore, Style, init
 
 init(autoreset=True)
 
-
 ColorType = Tuple[int, int, int]
 
 
 class ColorClsNameLookup:
     def __init__(self) -> None:
         self.cls: List[str] = [
-            i.lower() for i in 
-                ["Aeroplane",
-                "Bicycle",
-                "Bird",
-                "Boat",
-                "Bottle",
-                "Bus",
-                "Car",
-                "Cat",
-                "Chair",
-                "Cow",
-                "Diningtable",
-                "Dog",
-                "Horse",
-                "Motorbike",
-                "Person",
-                "Pottedplant",
-                "Sheep",
-                "Sofa",
-                "Train",
-                "Tvmonitor",
-                "Border",
-                "Background"]
+            i.lower() for i in
+            ["Aeroplane",
+             "Bicycle",
+             "Bird",
+             "Boat",
+             "Bottle",
+             "Bus",
+             "Car",
+             "Cat",
+             "Chair",
+             "Cow",
+             "Diningtable",
+             "Dog",
+             "Horse",
+             "Motorbike",
+             "Person",
+             "Pottedplant",
+             "Sheep",
+             "Sofa",
+             "Train",
+             "Tvmonitor",
+             "Border",
+             "Background"]
         ]
         self.colors: List[ColorType] = [
             (128, 0, 0),
@@ -71,11 +70,11 @@ class ColorClsNameLookup:
             (0, 0, 0)
         ]
         self.label = list(range(len(self.cls)))
-        self.map = {i:i for i in range(len(self.cls))}
+        self.map = {i: i for i in range(len(self.cls))}
 
     def get_cls(self, color: Optional[ColorType] = None, label: Optional[int] = None):
-        assert (color is not None) ^ (label is not None), f"{Fore.RED}Either color or label should not be None, "\
-            f"but you offered color={color}, label={label}"
+        assert (color is not None) ^ (label is not None), f"{Fore.RED}Either color or label should not be None, " \
+                                                          f"but you offered color={color}, label={label}"
         if color is not None:
             index = self.colors.index(color)
             index = self.map[index]
@@ -86,7 +85,7 @@ class ColorClsNameLookup:
         return cls
 
     def get_color(self, cls: Optional[str] = None, label: Optional[int] = None):
-        assert (cls is not None) ^ (label is not None), f"{Fore.RED}Either cls or label should not be None, "\
+        assert (cls is not None) ^ (label is not None), f"{Fore.RED}Either cls or label should not be None, " \
                                                         f"but you offered cls={cls}, label={label}"
         if cls is not None:
             index = self.cls.index(cls)
@@ -98,20 +97,20 @@ class ColorClsNameLookup:
         return color
 
     def get_label(self, cls: Optional[str] = None, color: Optional[ColorType] = None):
-        assert (cls is not None) ^ (color is not None), f"{Fore.RED}Either cls or label should not be None, "\
+        assert (cls is not None) ^ (color is not None), f"{Fore.RED}Either cls or label should not be None, " \
                                                         f"but you offered cls={cls}, color={color}"
         if cls is not None:
             index = self.cls.index(cls)
             index = self.map[index]
             label = self.label[index]
         if color is not None:
+            label = self.colors.index(color)
             label = self.map[label]
-            label = self.colors.index(label)
         return label
-    
+
     def set_map(self, map: Dict[str, str]):
         for from_cls, to_cls in map.items():
-            self.map[self.cls.index(from_cls)]= self.cls.index(to_cls)
+            self.map[self.cls.index(from_cls)] = self.cls.index(to_cls)
         return self
 
 
@@ -122,25 +121,34 @@ class DatasetPath:
         image_folder: Path
         target_folder: Path
 
-        if platform.system() == "Windows":
-            base: Path = Path(__file__).resolve().parent.joinpath(
+        base: Path
+        if (os_name := platform.system()) == "Windows":
+            base = Path(__file__).resolve().parent.joinpath(
                 "datasets", "PascalVoc2012-windows").resolve()
+        elif os_name == "Linux":
+            base = Path(__file__).resolve().parent.joinpath(
+                "datasets", "PascalVoc2012-linux").resolve()
         else:
-            assert NotImplementedError, f"{Fore.RED}Please implement the base folder of the Pascal VOC 2012 root"\
+            assert NotImplementedError, f"{Fore.RED}Please implement the base folder of the Pascal VOC 2012 root" \
                                         f" path in your system"
 
-        image_folder: Path = base.joinpath("ImageSets", "JPEGImages")
-        target_folder: Path = base.joinpath("ImageSets", "SegmentationClass")
+        image_folder = base.joinpath("JPEGImages")
+        target_folder = base.joinpath("SegmentationClass")
 
         def __init__(self, split: str):
             assert split.lower() in [
                 "train", 'val'], f"{Fore.RED}Invalid dataset split"
             with self.base.joinpath("ImageSets", "Segmentation", "train.txt").open(mode="r") as f:
-                self.train_split: List[str] = [i.strip()
-                                               for i in f.readlines()]
+                self.train_split: List[str] = []
+                for i in f.readlines():
+                    head, tail = i.strip().split("_")
+                    self.train_split.append("_".join([head, f"{tail:>06s}"]))
 
             with self.base.joinpath("ImageSets", "Segmentation", "val.txt").open(mode="r") as f:
-                self.val_split: List[str] = [i.strip() for i in f.readlines()]
+                self.val_split: List[str] = []
+                for i in f.readlines():
+                    head, tail = i.strip().split("_")
+                    self.val_split.append("_".join([head, f"{tail:>06s}"]))
 
 
 @dataclass
@@ -164,7 +172,7 @@ class ProjectPath:
 class Logger(logging.Logger):
     def __init__(self, level: str = "info") -> None:
         super().__init__(name="FCN-Logger", level=getattr(logging, level.upper()))
-        self.log_path = []
+        self.log_path: List[Path] = []
 
     def close(self):
         print(f"Shutdown logger, waiting...")
@@ -237,6 +245,11 @@ def visualize(image: List[np.ndarray], title: Optional[Union[str, List[str]]] = 
 # @get_image(return_png=True, driver="pil")
 # @get_image(return_png=True, driver="ndarray")
 def visualize(image: ImageType, title: TitleType = None) -> None:
+    # typing
+    image_list: List[np.ndarray]
+    title_list: List[str]
+    ax: Union[List[Axes], List[List[Axes]]]
+
     # make images
     assert image is not None, f"image cannot be None"
     if isinstance(image, np.ndarray):
@@ -245,48 +258,51 @@ def visualize(image: ImageType, title: TitleType = None) -> None:
         assert image.shape[-3] in [1, 3], f"Wrong channel, should be [channel, width, height]" \
                                           f" or [image, channel, width, height], but you offered {image.shape}"
         if image.ndim == 3:
-            image = [image]
+            image_list = [image]
         elif image.ndim == 4:
-            image = [image[i, ...] for i in range(len(image))]
+            image_list = [image[i, ...] for i in range(len(image))]
     else:
+        image_list = []
         for i in image:
             assert i.ndim == 3, f"Wrong shape, should be List[np.ndarray[channel, width, height]]," \
                                 f" but you offered {i.shape}"
             assert i.shape[0] == 3, f"Wrong shape, should be List[np.ndarray[channel, width, height]]" \
                                     f" but you offered {i.shape}"
+            image_list.append(i)
 
     # make title
     assert isinstance(
         title, (str, list)) or title is None, f"Wrong type, should be str or List[str]"
     if isinstance(title, str) or title is None:
-        if len(image) > 1:
-            repeats = len(image)
+        if len(image_list) > 1:
+            repeats = len(image_list)
         else:
             repeats = 1
-        title = [title if isinstance(title, str) else ""] * repeats
+        title_list = [title if isinstance(title, str) else ""] * repeats
     elif isinstance(title, list):
+        title_list = []
         for i in title:
             assert isinstance(
-                i, str), f"{Fore.RED}Wrong type, should be List[str], but you offered {type(title)}"
+                i, str), f"{Fore.RED}Wrong type, should be List[str], but you offered {type(i)} in title"
+            title_list.append(i)
 
     import math
-    grid_r = int(math.sqrt(len(image)))
-    grid_c = math.ceil(len(image) / grid_r)
+    grid_r = int(math.sqrt(len(image_list)))
+    grid_c = math.ceil(len(image_list) / grid_r)
 
     fig, ax = plt.subplots(nrows=grid_r, ncols=grid_c, figsize=(
         3 * grid_r, 4 * grid_c), layout="tight")
-    if len(image) == 1:
+    if len(image_list) == 1:
         ax = [[ax]]
     elif grid_r == 1:
         ax = [ax]
 
     from matplotlib.axes import Axes
-    ax: Union[List[Axes], List[List[Axes]]]
-    for idx in range(len(image)):
+    for idx in range(len(image_list)):
         row = idx // grid_r
         col = idx - row * grid_r
-        ax[row][col].imshow(image[idx].transpose(1, 2, 0))
-        ax[row][col].set_title(title[idx])
+        ax[row][col].imshow(image_list[idx].transpose(1, 2, 0))
+        ax[row][col].set_title(title_list[idx])
 
 
 if __name__ == "__main__":
@@ -294,7 +310,7 @@ if __name__ == "__main__":
     # single_image = np.random.random(size=(3, 256, 256))
     # multiple_image = np.random.random(size=(16, 3, 256, 256))
     # image_list = [np.random.random(size=(3, 256, 256)) for i in range(16)]
-
+    #
     # visualize(multiple_image, [f"random_{i}" for i in range(len(multiple_image))])
     # plt.show()
 
@@ -309,7 +325,7 @@ if __name__ == "__main__":
     # pprint.pprint(project_path, width=1)
 
     # test dataset path
-    # print(DatasetPath.PascalVoc2012(split="train").train_split)
+    print(DatasetPath.PascalVoc2012(split="train").train_split)
 
     # test logger
     # logger = Logger().to_file("test1.log").to_file("test2.log").to_terminal()
@@ -317,5 +333,5 @@ if __name__ == "__main__":
     # logger.close()
 
     # test mapper
-    ccn_lookup = ColorClsNameLookup().set_map({"border":"background"})
-    print(ccn_lookup.get_color(cls="border"))
+    # ccn_lookup = ColorClsNameLookup().set_map({"border": "background"})
+    # print(ccn_lookup.get_color(cls="border"))
