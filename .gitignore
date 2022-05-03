@@ -1,0 +1,7 @@
+.vscode/
+.idea/
+runs/
+log/
+
+datasets/*
+!datasets/README.md
