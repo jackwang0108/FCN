@@ -16,6 +16,105 @@ from colorama import Fore, Style, init
 init(autoreset=True)
 
 
+ColorType = Tuple[int, int, int]
+
+
+class ColorClsNameLookup:
+    def __init__(self) -> None:
+        self.cls: List[str] = [
+            i.lower() for i in 
+                ["Aeroplane",
+                "Bicycle",
+                "Bird",
+                "Boat",
+                "Bottle",
+                "Bus",
+                "Car",
+                "Cat",
+                "Chair",
+                "Cow",
+                "Diningtable",
+                "Dog",
+                "Horse",
+                "Motorbike",
+                "Person",
+                "Pottedplant",
+                "Sheep",
+                "Sofa",
+                "Train",
+                "Tvmonitor",
+                "Border",
+                "Background"]
+        ]
+        self.colors: List[ColorType] = [
+            (128, 0, 0),
+            (0, 128, 0),
+            (128, 128, 0),
+            (0, 0, 128),
+            (128, 0, 128),
+            (0, 128, 128),
+            (128, 128, 128),
+            (64, 0, 0),
+            (192, 0, 0),
+            (64, 128, 0),
+            (192, 128, 0),
+            (64, 0, 128),
+            (192, 0, 128),
+            (64, 128, 128),
+            (192, 128, 128),
+            (0, 64, 0),
+            (128, 64, 0),
+            (0, 192, 0),
+            (128, 192, 0),
+            (0, 64, 128),
+            (224, 224, 192),
+            (0, 0, 0)
+        ]
+        self.label = list(range(len(self.cls)))
+        self.map = {i:i for i in range(len(self.cls))}
+
+    def get_cls(self, color: Optional[ColorType] = None, label: Optional[int] = None):
+        assert (color is not None) ^ (label is not None), f"{Fore.RED}Either color or label should not be None, "\
+            f"but you offered color={color}, label={label}"
+        if color is not None:
+            index = self.colors.index(color)
+            index = self.map[index]
+            cls = self.cls[index]
+        if label is not None:
+            label = self.map[label]
+            cls = self.cls[label]
+        return cls
+
+    def get_color(self, cls: Optional[str] = None, label: Optional[int] = None):
+        assert (cls is not None) ^ (label is not None), f"{Fore.RED}Either cls or label should not be None, "\
+                                                        f"but you offered cls={cls}, label={label}"
+        if cls is not None:
+            index = self.cls.index(cls)
+            index = self.map[index]
+            color = self.colors[index]
+        if label is not None:
+            label = self.map[label]
+            color = self.colors[label]
+        return color
+
+    def get_label(self, cls: Optional[str] = None, color: Optional[ColorType] = None):
+        assert (cls is not None) ^ (color is not None), f"{Fore.RED}Either cls or label should not be None, "\
+                                                        f"but you offered cls={cls}, color={color}"
+        if cls is not None:
+            index = self.cls.index(cls)
+            index = self.map[index]
+            label = self.label[index]
+        if color is not None:
+            label = self.map[label]
+            label = self.colors.index(label)
+        return label
+    
+    def set_map(self, map: Dict[str, str]):
+        for from_cls, to_cls in map.items():
+            self.map[self.cls.index(from_cls)]= self.cls.index(to_cls)
+        return self
+
+
 class DatasetPath:
     class PascalVoc2012:
         train_split: List[str]
@@ -213,6 +312,10 @@ if __name__ == "__main__":
     # print(DatasetPath.PascalVoc2012(split="train").train_split)
 
     # test logger
-    logger = Logger().to_file("test1.log").to_file("test2.log").to_terminal()
-    logger.info(f"{Fore.RED}Test")
-    logger.close()
+    # logger = Logger().to_file("test1.log").to_file("test2.log").to_terminal()
+    # logger.info(f"{Fore.RED}Test")
+    # logger.close()
+
+    # test mapper
+    ccn_lookup = ColorClsNameLookup().set_map({"border":"background"})
+    print(ccn_lookup.get_color(cls="border"))
